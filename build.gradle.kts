@@ -1,0 +1,34 @@
+plugins {
+    java
+    application
+}
+
+group = "org.gsb"
+version = "0.1.0"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("io.javalin:javalin:6.4.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
+    implementation("org.xerial:sqlite-jdbc:3.46.1.3")
+    runtimeOnly("org.slf4j:slf4j-simple:2.0.16")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+application {
+    mainClass = "org.gsb.jbd2.web.App"
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
