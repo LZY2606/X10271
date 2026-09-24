@@ -1,0 +1,43 @@
+{
+  "caseId": "ext4-journal-lab-01",
+  "title": "ext4 日志演算室：事务描述块、revoke 与崩溃点回放",
+  "narrative": "文件系统团队导入 ext4/JBD2 块快照、superblock 与预期崩溃点，生成可解释的日志扫描与回放计划。",
+  "geometry": {
+    "blockSize": {"value": 1024, "unit": "bytes"},
+    "logStartBlock": {"value": 64, "basis": "filesystem-block"},
+    "journalBlocks": {"value": 20, "unit": "blocks", "basis": "journal-ring-index"},
+    "crashPoint": {"value": 19, "basis": "journal-ring-index"},
+    "checksumVersion": {"value": 3, "meaning": "crc32c per-tag + commit, uuid-seeded"}
+  },
+  "sources": [
+    {"id": "src-journal-01", "kind": "journal-image", "file": "journal-v3.bin",
+     "blockSize": {"value": 1024, "unit": "bytes"},
+     "logStartBlock": {"value": 64, "basis": "filesystem-block"}},
+    {"id": "src-blocks-01", "kind": "block-snapshot", "file": "blocks-base.bin",
+     "blockSize": {"value": 1024, "unit": "bytes"}},
+    {"id": "src-superblock-01", "kind": "superblock",
+     "raw": {"s_log_block_size": {"value": 1024, "unit": "bytes"},
+             "s_first_data_block": {"value": 0, "basis": "filesystem-block"},
+             "s_journal_inum": {"value": 8, "basis": "inode-number"}}},
+    {"id": "src-bad-blocksize-01", "kind": "block-size-probe",
+     "raw": {"declared_block_size": {"value": 1000, "unit": "bytes"}},
+     "expect": "diagnostic-only: not a power of two, kept raw, never normalised"},
+    {"id": "src-crashpoint-01", "kind": "crash-point",
+     "raw": {"ring_index": {"value": 19, "basis": "journal-ring-index"}}}
+  ],
+  "boundaries": [
+    "ring-wraparound: sequences FE FF 00 01 02 ordered on the ring, never by integer sort",
+    "half-transaction: seq 2 has descriptor+data but no commit before crash point",
+    "duplicate-block: fs block 10 written in seq FE and seq 0; ring-last committed writer wins",
+    "rewrite-after-revoke: fs block 11 revoked in seq 0, rewritten in seq 1",
+    "checksum-break: seq 1 commit checksum corrupted; boundary after it stays uncertain",
+    "invalid-block-size: 1000 bytes kept raw with diagnostic",
+    "idempotent-replay: applying the derived block map twice is a no-op the second time"
+  ],
+  "semantics": [
+    "only transactions with a complete valid commit may replay",
+    "revoke applies by ring sequence range (equal-or-later revoker cancels)",
+    "ring wraparound never uses plain integer ordering",
+    "after a checksum failure the boundary keeps uncertainty; all legal candidates are retained"
+  ]
+}

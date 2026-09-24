@@ -1,0 +1,40 @@
+plugins {
+    id 'application'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'io.javalin:javalin:6.3.0'
+    implementation 'org.xerial:sqlite-jdbc:3.46.1.3'
+    implementation 'org.slf4j:slf4j-simple:2.0.13'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+application {
+    mainClass = 'org.journalreplay.Main'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+    }
+}
+
+tasks.register('generateFixtures', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.journalreplay.casepack.FixtureGenerator'
+    args 'src/main/resources/fixtures/ext4-journal-lab'
+    workingDir = projectDir
+}
